@@ -176,7 +176,13 @@
 
     // Inicializar la ruleta
     drawWheel();
-    
+
+    function drawWheel() {
+      const totalWeight = Object.values(data).reduce((a, b) => a + b, 0);
+      let startAngle = 0;
+      let i = 0;
+      angles = [];
+
       // Fondo blanco para el canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
