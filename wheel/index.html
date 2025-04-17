@@ -179,15 +179,12 @@
 
 
     
-    const data = {
-      "Juan": 3,
-      "María": 5,
-      "Pedro": 2,
-      "Ana": 4,
-      "Luis": 1,
-      "Sofía": 6,
-      "Carlos": 2
-    };
+    fetch("data.json")
+      .then(res => res.json())
+      .then(json => {
+        data = json;
+        drawWheel();
+      });
 
 
 
