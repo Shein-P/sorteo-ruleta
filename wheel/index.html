@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sorteo Visual con Explosión de Papelillos</title>
+  <title>Sorteo Visual</title>
   <style>
     body {
       font-family: sans-serif;
@@ -13,22 +13,17 @@
       align-items: center;
       justify-content: center;
       height: 100vh;
-      background: linear-gradient(135deg, #f06, #f79);
-      color: white;
-      text-align: center;
+      background-color: #f9f9f9;
     }
-
     #container {
       width: 300px;
       height: 300px;
       overflow: hidden;
-      border: 10px solid #ffcc00;
-      border-radius: 50%;
-      background-color: #ffcc00;
+      border: 2px solid #333;
+      border-radius: 10px;
+      background-color: white;
       position: relative;
-      box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
     }
-
     #wheel {
       position: absolute;
       top: 0;
@@ -37,81 +32,39 @@
       height: 100%;
       transform-origin: center;
       transform: rotate(0deg);
-      transition: transform 4s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+      transition: transform 4s ease-out;
     }
-
     .slice {
       position: absolute;
       top: 50%;
       left: 50%;
       width: 50%;
       height: 50%;
-      background-color: #ff6600;
+      background-color: #ffcc00;
       border-radius: 50%;
       transform-origin: 100% 100%;
       text-align: center;
       line-height: 2;
       font-size: 20px;
       color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
     }
-
     button {
-      margin-top: 30px;
-      padding: 15px 30px;
-      font-size: 20px;
-      background-color: #ff9900;
-      border: none;
-      border-radius: 5px;
-      color: white;
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
       cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-
-    button:hover {
-      transform: scale(1.1);
-    }
-
-    .confetti {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      opacity: 0;
-      z-index: 1000;
-      transition: opacity 1s ease-out;
-    }
-
-    .confetti div {
-      position: absolute;
-      background-color: #ffcc00;
-      width: 10px;
-      height: 10px;
-      animation: confettiAnimation 1.5s forwards;
-    }
-
-    @keyframes confettiAnimation {
-      0% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(200px) rotate(180deg); }
-      100% { transform: translateY(400px) rotate(360deg); }
     }
   </style>
 </head>
 <body>
-  <h1>🎉 Sorteo Visual 🎉</h1>
+  <h1>Sorteo Visual</h1>
   <div id="container">
     <div id="wheel"></div>
   </div>
   <button onclick="startSpin()">🎯 Iniciar Sorteo</button>
 
-  <div id="confetti" class="confetti"></div>
-
   <script>
+    // Suponemos que `data.json` es el archivo que contiene los datos de los participantes y sus cantidades
     fetch("data.json")
       .then(res => res.json())
       .then(data => {
@@ -136,34 +89,12 @@
       const randomRotation = Math.floor(Math.random() * 360) + 3600; // Entre 3600 y 7200 grados para asegurar varias rotaciones
       wheel.style.transform = `rotate(${randomRotation}deg)`;
 
-      // Crear la animación de confeti
-      showConfetti();
-
       setTimeout(() => {
         const finalPosition = randomRotation % 360;
         const winnerIndex = Math.floor(finalPosition / (360 / window.totalSlices.length));
         const winner = window.totalSlices[winnerIndex];
-        alert("🏆 ¡Ganador: " + winner + "!");
+        alert("🏆 Ganador: " + winner);
       }, 4000); // Espera 4 segundos para que termine la animación
-    }
-
-    function showConfetti() {
-      const confettiContainer = document.getElementById("confetti");
-      confettiContainer.style.opacity = 1;
-
-      // Crear confeti
-      for (let i = 0; i < 100; i++) {
-        const confettiPiece = document.createElement("div");
-        confettiPiece.style.left = `${Math.random() * 100}%`;
-        confettiPiece.style.animationDelay = `${Math.random() * 1.5}s`;
-        confettiContainer.appendChild(confettiPiece);
-      }
-
-      // Ocultar el confeti después de la animación
-      setTimeout(() => {
-        confettiContainer.style.opacity = 0;
-        confettiContainer.innerHTML = ""; // Limpiar el confeti
-      }, 1500);
     }
   </script>
 </body>
