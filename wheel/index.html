@@ -3,98 +3,174 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sorteo Visual</title>
+  <title>Sorteo - Rueda Giratoria</title>
   <style>
     body {
-      font-family: sans-serif;
       margin: 0;
+      padding: 0;
+      background: linear-gradient(to right, #f953c6, #b91d73);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      background-color: #f9f9f9;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
     }
-    #container {
-      width: 300px;
-      height: 300px;
-      overflow: hidden;
-      border: 2px solid #333;
-      border-radius: 10px;
-      background-color: white;
-      position: relative;
+
+    #wheelCanvas {
+      width: 400px;
+      height: 400px;
     }
-    #wheel {
-      position: absolute;
+
+    button {
+      margin-top: 20px;
+      padding: 12px 24px;
+      font-size: 18px;
+      background-color: #ffffff;
+      color: #b91d73;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+    }
+
+    #confetti {
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      transform-origin: center;
-      transform: rotate(0deg);
-      transition: transform 4s ease-out;
-    }
-    .slice {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 50%;
-      height: 50%;
-      background-color: #ffcc00;
-      border-radius: 50%;
-      transform-origin: 100% 100%;
-      text-align: center;
-      line-height: 2;
-      font-size: 20px;
-      color: white;
-    }
-    button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 18px;
-      cursor: pointer;
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
-  <h1>Sorteo Visual</h1>
-  <div id="container">
-    <div id="wheel"></div>
-  </div>
-  <button onclick="startSpin()">🎯 Iniciar Sorteo</button>
+  <canvas id="wheelCanvas" width="400" height="400"></canvas>
+  <button onclick="spinWheel()">🎯 Girar la Rueda</button>
+  <canvas id="confetti"></canvas>
 
   <script>
-    // Suponemos que `data.json` es el archivo que contiene los datos de los participantes y sus cantidades
+    let entries = [];
+    let angles = [];
+    let winner = "";
+
     fetch("data.json")
       .then(res => res.json())
       .then(data => {
-        const wheel = document.getElementById("wheel");
-        const totalSlices = Object.entries(data).map(([name, count]) => {
-          return Array(count).fill(name);
-        }).flat();
-
-        totalSlices.forEach((name, idx) => {
-          const slice = document.createElement("div");
-          slice.className = "slice";
-          slice.textContent = name;
-          slice.style.transform = `rotate(${(360 / totalSlices.length) * idx}deg)`;
-          wheel.appendChild(slice);
-        });
-
-        window.totalSlices = totalSlices;
+        entries = Object.entries(data).flatMap(([name, count]) => Array(count).fill(name));
+        shuffle(entries);
+        drawWheel();
       });
 
-    function startSpin() {
-      const wheel = document.getElementById("wheel");
-      const randomRotation = Math.floor(Math.random() * 360) + 3600; // Entre 3600 y 7200 grados para asegurar varias rotaciones
-      wheel.style.transform = `rotate(${randomRotation}deg)`;
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
 
-      setTimeout(() => {
-        const finalPosition = randomRotation % 360;
-        const winnerIndex = Math.floor(finalPosition / (360 / window.totalSlices.length));
-        const winner = window.totalSlices[winnerIndex];
-        alert("🏆 Ganador: " + winner);
-      }, 4000); // Espera 4 segundos para que termine la animación
+    const canvas = document.getElementById("wheelCanvas");
+    const ctx = canvas.getContext("2d");
+    const radius = canvas.width / 2;
+
+    function drawWheel() {
+      const total = entries.length;
+      const angleStep = 2 * Math.PI / total;
+
+      angles = [];
+
+      for (let i = 0; i < total; i++) {
+        const angle = i * angleStep;
+        angles.push(angle);
+
+        ctx.beginPath();
+        ctx.moveTo(radius, radius);
+        ctx.arc(radius, radius, radius, angle, angle + angleStep);
+        ctx.fillStyle = `hsl(${(i * 360 / total)}, 70%, 60%)`;
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(radius, radius);
+        ctx.rotate(angle + angleStep / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 14px sans-serif";
+        ctx.fillText(entries[i], radius - 10, 5);
+        ctx.restore();
+      }
+    }
+
+    function spinWheel() {
+      const spinAngle = Math.random() * 360 + 3600;
+      let currentAngle = 0;
+      const duration = 5000;
+      const start = performance.now();
+
+      function animate(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = easeOutCubic(progress);
+        currentAngle = ease * spinAngle;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(radius, radius);
+        ctx.rotate(currentAngle * Math.PI / 180);
+        ctx.translate(-radius, -radius);
+        drawWheel();
+        ctx.restore();
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          const index = Math.floor((entries.length - (Math.floor(currentAngle) % 360) / 360 * entries.length) % entries.length);
+          winner = entries[index];
+          showConfetti();
+          alert("🏆 Ganador: " + winner);
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    // Confetti simple con canvas
+    const confettiCanvas = document.getElementById("confetti");
+    const confettiCtx = confettiCanvas.getContext("2d");
+    confettiCanvas.width = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
+    const confettiPieces = [];
+
+    function showConfetti() {
+      confettiPieces.length = 0;
+      for (let i = 0; i < 150; i++) {
+        confettiPieces.push({
+          x: Math.random() * confettiCanvas.width,
+          y: Math.random() * confettiCanvas.height - confettiCanvas.height,
+          size: Math.random() * 8 + 4,
+          color: `hsl(${Math.random() * 360}, 100%, 60%)`,
+          velocity: Math.random() * 3 + 2,
+        });
+      }
+      requestAnimationFrame(updateConfetti);
+    }
+
+    function updateConfetti() {
+      confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      for (let piece of confettiPieces) {
+        confettiCtx.fillStyle = piece.color;
+        confettiCtx.fillRect(piece.x, piece.y, piece.size, piece.size);
+        piece.y += piece.velocity;
+      }
+      requestAnimationFrame(updateConfetti);
     }
   </script>
 </body>
