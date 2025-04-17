@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sorteo Ruleta</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: #f4f4f4;
+    }
+    canvas {
+      border: 5px solid #333;
+      border-radius: 50%;
+      background: white;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 25px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="wheel" width="500" height="500"></canvas>
+  <button onclick="spin()">🎉 Girar Ruleta</button>
+
+  <script>
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
+    const radius = canvas.width / 2;
+    let participants = [];
+
+    fetch("data.json")
+      .then(res => res.json())
+      .then(data => {
+        participants = Object.entries(data).flatMap(([name, count]) => Array(count).fill(name));
+        drawWheel();
+      });
+
+    let angleOffset = 0;
+    function drawWheel() {
+      const n = participants.length;
+      const angleStep = 2 * Math.PI / n;
+      for (let i = 0; i < n; i++) {
+        const angle = i * angleStep + angleOffset;
+        ctx.beginPath();
+        ctx.moveTo(radius, radius);
+        ctx.arc(radius, radius, radius, angle, angle + angleStep);
+        ctx.fillStyle = `hsl(${(i * 360 / n)}, 80%, 70%)`;
+        ctx.fill();
+        ctx.fillStyle = "#000";
+        ctx.font = "16px sans-serif";
+        ctx.textAlign = "right";
+        ctx.save();
+        ctx.translate(radius, radius);
+        ctx.rotate(angle + angleStep / 2);
+        ctx.fillText(participants[i], radius - 10, 5);
+        ctx.restore();
+      }
+    }
+
+    function spin() {
+      const rotations = Math.random() * 3 + 5;
+      const targetAngle = rotations * 2 * Math.PI;
+      const duration = 4000;
+      const start = performance.now();
+
+      function animate(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = easeOutCubic(progress);
+        angleOffset = ease * targetAngle;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawWheel();
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          const winnerIndex = Math.floor(((2 * Math.PI - (angleOffset % (2 * Math.PI))) / (2 * Math.PI)) * participants.length) % participants.length;
+          alert("🏆 Ganador: " + participants[winnerIndex]);
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+  </script>
+</body>
+</html>

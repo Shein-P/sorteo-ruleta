@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sorteo Scroll</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #f9f9f9;
+    }
+    #container {
+      width: 300px;
+      height: 100px;
+      overflow: hidden;
+      border: 2px solid #333;
+      border-radius: 10px;
+      background-color: white;
+      position: relative;
+    }
+    #scroll {
+      position: absolute;
+      top: 0;
+      width: 100%;
+    }
+    .entry {
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      border-bottom: 1px solid #ddd;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="scroll"></div>
+  </div>
+  <button onclick="startScroll()">🎯 Iniciar Sorteo</button>
+
+  <script>
+    let entries = [];
+    const scrollDiv = document.getElementById("scroll");
+
+    fetch("data.json")
+      .then(res => res.json())
+      .then(data => {
+        entries = Object.entries(data).flatMap(([name, count]) => Array(count).fill(name));
+        fillScroll();
+      });
+
+    function fillScroll() {
+      scrollDiv.innerHTML = "";
+      entries.forEach(name => {
+        const div = document.createElement("div");
+        div.className = "entry";
+        div.textContent = name;
+        scrollDiv.appendChild(div);
+      });
+      for (let i = 0; i < 10; i++) {
+        const div = document.createElement("div");
+        div.className = "entry";
+        div.textContent = entries[Math.floor(Math.random() * entries.length)];
+        scrollDiv.appendChild(div);
+      }
+    }
+
+    function startScroll() {
+      const totalHeight = scrollDiv.scrollHeight;
+      const duration = 3000;
+      const start = performance.now();
+
+      function animateScroll(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = easeOutCubic(progress);
+        scrollDiv.style.top = `-${ease * (totalHeight - 100)}px`;
+
+        if (progress < 1) {
+          requestAnimationFrame(animateScroll);
+        } else {
+          const idx = Math.floor((ease * (totalHeight - 100)) / 100);
+          const winner = scrollDiv.children[idx]?.textContent || "???";
+          alert("🏆 Ganador: " + winner);
+        }
+      }
+
+      requestAnimationFrame(animateScroll);
+    }
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+  </script>
+</body>
+</html>
