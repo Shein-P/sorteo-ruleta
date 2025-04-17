@@ -1,98 +1,169 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sorteo Ruleta</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sorteo Visual con Explosión de Papelillos</title>
   <style>
     body {
       font-family: sans-serif;
+      margin: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      margin: 0;
-      background: #f4f4f4;
+      background: linear-gradient(135deg, #f06, #f79);
+      color: white;
+      text-align: center;
     }
-    canvas {
-      border: 5px solid #333;
+
+    #container {
+      width: 300px;
+      height: 300px;
+      overflow: hidden;
+      border: 10px solid #ffcc00;
       border-radius: 50%;
-      background: white;
+      background-color: #ffcc00;
+      position: relative;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
     }
+
+    #wheel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transform-origin: center;
+      transform: rotate(0deg);
+      transition: transform 4s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+    }
+
+    .slice {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 50%;
+      height: 50%;
+      background-color: #ff6600;
+      border-radius: 50%;
+      transform-origin: 100% 100%;
+      text-align: center;
+      line-height: 2;
+      font-size: 20px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+
     button {
-      margin-top: 20px;
-      padding: 10px 25px;
-      font-size: 18px;
+      margin-top: 30px;
+      padding: 15px 30px;
+      font-size: 20px;
+      background-color: #ff9900;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    button:hover {
+      transform: scale(1.1);
+    }
+
+    .confetti {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 1000;
+      transition: opacity 1s ease-out;
+    }
+
+    .confetti div {
+      position: absolute;
+      background-color: #ffcc00;
+      width: 10px;
+      height: 10px;
+      animation: confettiAnimation 1.5s forwards;
+    }
+
+    @keyframes confettiAnimation {
+      0% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(200px) rotate(180deg); }
+      100% { transform: translateY(400px) rotate(360deg); }
     }
   </style>
 </head>
 <body>
-  <canvas id="wheel" width="500" height="500"></canvas>
-  <button onclick="spin()">🎉 Girar Ruleta</button>
+  <h1>🎉 Sorteo Visual 🎉</h1>
+  <div id="container">
+    <div id="wheel"></div>
+  </div>
+  <button onclick="startSpin()">🎯 Iniciar Sorteo</button>
+
+  <div id="confetti" class="confetti"></div>
 
   <script>
-    const canvas = document.getElementById("wheel");
-    const ctx = canvas.getContext("2d");
-    const radius = canvas.width / 2;
-    let participants = [];
-
     fetch("data.json")
       .then(res => res.json())
       .then(data => {
-        participants = Object.entries(data).flatMap(([name, count]) => Array(count).fill(name));
-        drawWheel();
+        const wheel = document.getElementById("wheel");
+        const totalSlices = Object.entries(data).map(([name, count]) => {
+          return Array(count).fill(name);
+        }).flat();
+
+        totalSlices.forEach((name, idx) => {
+          const slice = document.createElement("div");
+          slice.className = "slice";
+          slice.textContent = name;
+          slice.style.transform = `rotate(${(360 / totalSlices.length) * idx}deg)`;
+          wheel.appendChild(slice);
+        });
+
+        window.totalSlices = totalSlices;
       });
 
-    let angleOffset = 0;
-    function drawWheel() {
-      const n = participants.length;
-      const angleStep = 2 * Math.PI / n;
-      for (let i = 0; i < n; i++) {
-        const angle = i * angleStep + angleOffset;
-        ctx.beginPath();
-        ctx.moveTo(radius, radius);
-        ctx.arc(radius, radius, radius, angle, angle + angleStep);
-        ctx.fillStyle = `hsl(${(i * 360 / n)}, 80%, 70%)`;
-        ctx.fill();
-        ctx.fillStyle = "#000";
-        ctx.font = "16px sans-serif";
-        ctx.textAlign = "right";
-        ctx.save();
-        ctx.translate(radius, radius);
-        ctx.rotate(angle + angleStep / 2);
-        ctx.fillText(participants[i], radius - 10, 5);
-        ctx.restore();
-      }
+    function startSpin() {
+      const wheel = document.getElementById("wheel");
+      const randomRotation = Math.floor(Math.random() * 360) + 3600; // Entre 3600 y 7200 grados para asegurar varias rotaciones
+      wheel.style.transform = `rotate(${randomRotation}deg)`;
+
+      // Crear la animación de confeti
+      showConfetti();
+
+      setTimeout(() => {
+        const finalPosition = randomRotation % 360;
+        const winnerIndex = Math.floor(finalPosition / (360 / window.totalSlices.length));
+        const winner = window.totalSlices[winnerIndex];
+        alert("🏆 ¡Ganador: " + winner + "!");
+      }, 4000); // Espera 4 segundos para que termine la animación
     }
 
-    function spin() {
-      const rotations = Math.random() * 3 + 5;
-      const targetAngle = rotations * 2 * Math.PI;
-      const duration = 4000;
-      const start = performance.now();
+    function showConfetti() {
+      const confettiContainer = document.getElementById("confetti");
+      confettiContainer.style.opacity = 1;
 
-      function animate(now) {
-        const elapsed = now - start;
-        const progress = Math.min(elapsed / duration, 1);
-        const ease = easeOutCubic(progress);
-        angleOffset = ease * targetAngle;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawWheel();
-
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          const winnerIndex = Math.floor(((2 * Math.PI - (angleOffset % (2 * Math.PI))) / (2 * Math.PI)) * participants.length) % participants.length;
-          alert("🏆 Ganador: " + participants[winnerIndex]);
-        }
+      // Crear confeti
+      for (let i = 0; i < 100; i++) {
+        const confettiPiece = document.createElement("div");
+        confettiPiece.style.left = `${Math.random() * 100}%`;
+        confettiPiece.style.animationDelay = `${Math.random() * 1.5}s`;
+        confettiContainer.appendChild(confettiPiece);
       }
 
-      requestAnimationFrame(animate);
-    }
-
-    function easeOutCubic(t) {
-      return 1 - Math.pow(1 - t, 3);
+      // Ocultar el confeti después de la animación
+      setTimeout(() => {
+        confettiContainer.style.opacity = 0;
+        confettiContainer.innerHTML = ""; // Limpiar el confeti
+      }, 1500);
     }
   </script>
 </body>
