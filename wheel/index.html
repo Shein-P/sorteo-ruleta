@@ -40,23 +40,23 @@
     
     #pointer {
       position: absolute;
-      top: -40px;
-      left: 50%;
-      transform: translateX(-50%);
+      top: 50%;
+      right: -40px;
+      transform: translateY(-50%);
       width: 0;
       height: 0;
-      border-left: 25px solid transparent;
-      border-right: 25px solid transparent;
-      border-bottom: 40px solid #e74c3c;
+      border-top: 25px solid transparent;
+      border-bottom: 25px solid transparent;
+      border-left: 40px solid #e74c3c;
       z-index: 10;
-      filter: drop-shadow(0 5px 3px rgba(0,0,0,0.3));
+      filter: drop-shadow(2px 0 3px rgba(0,0,0,0.3));
     }
     
     #pointer::after {
       content: '';
       position: absolute;
-      top: 5px;
-      left: -15px;
+      top: -15px;
+      left: -25px;
       width: 30px;
       height: 30px;
       background: #e74c3c;
