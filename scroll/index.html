@@ -1,11 +1,8 @@
-<!-- Proyecto 2: Scroll Sorteo Animado -->
-<!-- Archivo: index.html -->
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sorteo Scroll</title>
   <style>
     body {
@@ -75,7 +72,9 @@
 </head>
 <body>
   <div id="container">
-    <div id="scroll"></div>
+    <div id="scroll">
+      <div class="entry">🎲 -----</div>
+    </div>
   </div>
   <button onclick="startScroll()">🎯 Iniciar Sorteo</button>
 
@@ -87,26 +86,29 @@
       .then(res => res.json())
       .then(data => {
         entries = Object.entries(data).flatMap(([name, count]) => Array(count).fill(name));
-        fillScroll();
+        // No llenamos todavía, solo mostramos el mensaje de inicio
+        scrollDiv.innerHTML = '<div class="entry">🎲 Comenzar</div>';
       });
 
-    function fillScroll() {
+    function startScroll() {
       scrollDiv.innerHTML = "";
+
+      // Agregar los nombres de los participantes
       entries.forEach(name => {
         const div = document.createElement("div");
         div.className = "entry";
         div.textContent = name;
         scrollDiv.appendChild(div);
       });
+
+      // Agregar algunos extras al final para que el scroll termine suave
       for (let i = 0; i < 10; i++) {
         const div = document.createElement("div");
         div.className = "entry";
         div.textContent = entries[Math.floor(Math.random() * entries.length)];
         scrollDiv.appendChild(div);
       }
-    }
 
-    function startScroll() {
       const totalHeight = scrollDiv.scrollHeight;
       const duration = 3000;
       const start = performance.now();
